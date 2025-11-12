@@ -1,41 +1,35 @@
 #!/usr/bin/env python3
 """
-clean.py - 10/10 Production-grade Python cleanup utility
-
-This is an improved, hardened, and user-friendly version of the "6.0.0"
-script you supplied. Focus areas:
- - Fixed datetime/logging bugs and syntax issues
- - Robust stale-lock detection + safe release on signals
- - Atomic backup with sha256 and safe tmp cleanup
- - Console color support that can be disabled
- - Rich, grouped preview (counts + sizes) for excellent user visibility
- - Better arranged grouping (sorted by group size and item count)
- - Clear exit codes and automation-friendly flags
-
-Requirements: Python 3.10+
-No external dependencies (optional: psutil for Windows PID checks)
+pypurge - A production-grade Python cleanup utility.
 """
 
 from __future__ import annotations
 
 import argparse
-import fnmatch
-import hashlib
 import json
 import logging
 import os
 import re
-import shutil
 import signal
-import stat
+import shutil
 import sys
-import tempfile
-import time
-import zipfile
-from collections import defaultdict
-from datetime import datetime as _dt
 from pathlib import Path
-from typing import List, Optional, Tuple
+
+from .modules.backup import backup_targets_atomic
+from .modules.deletion import force_rmtree, force_unlink
+from .modules.locking import acquire_lock, release_lock
+from .modules.logging import setup_logging
+from .modules.safety import is_dangerous_root
+from .modules.scan import scan_for_targets
+from .modules.ui import (
+    get_colors,
+    print_error,
+    print_info,
+    print_rich_preview,
+    print_success,
+    print_warning,
+)
+from .modules.utils import format_bytes, get_size
 
 __version__ = "6.0.0"
 
@@ -51,444 +45,12 @@ EXIT_UNKNOWN_ERROR = 6
 DEFAULT_LOCK_TTL = 24 * 3600  # 24 hours stale lock threshold
 DEFAULT_LARGE_THRESHOLD = 100 * 1024 * 1024  # 100MB
 
-# ----- Logging helpers -----
-
-
-class JsonFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:
-        payload = {
-            "ts": _dt.utcfromtimestamp(record.created).isoformat() + "Z",
-            "level": record.levelname,
-            "msg": record.getMessage(),
-        }
-        if record.exc_info:
-            payload["exc"] = self.formatException(record.exc_info)
-        return json.dumps(payload, ensure_ascii=False)
-
-
-def setup_logging(
-    log_format: str,
-    log_file: Optional[Path],
-    level: int = logging.INFO,
-    rotate: bool = True,
-) -> None:
-    root = logging.getLogger()
-    root.setLevel(level)
-
-    # clear existing handlers
-    while root.handlers:
-        root.handlers.pop()
-
-    if log_format == "json":
-        formatter = JsonFormatter()
-    else:
-        formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-    if log_file:
-        try:
-            if rotate:
-                from logging.handlers import RotatingFileHandler
-
-                fh = RotatingFileHandler(
-                    str(log_file),
-                    maxBytes=5 * 1024 * 1024,
-                    backupCount=5,
-                    encoding="utf-8",
-                )
-            else:
-                fh = logging.FileHandler(str(log_file), encoding="utf-8")
-            fh.setFormatter(
-                JsonFormatter()
-                if log_format == "json"
-                else logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
-            )
-            root.addHandler(fh)
-        except Exception:
-            # best-effort: add a simple file handler
-            try:
-                fh = logging.FileHandler(str(log_file), encoding="utf-8")
-                fh.setFormatter(
-                    JsonFormatter()
-                    if log_format == "json"
-                    else logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
-                )
-                root.addHandler(fh)
-            except Exception:
-                logging.getLogger(__name__).warning(
-                    "Failed to open log file: %s", log_file
-                )
-
-
 logger = logging.getLogger(__name__)
-
-# ----- Utilities -----
-
-
-def format_bytes(bytes_size: int) -> str:
-    units = ["B", "KB", "MB", "GB", "TB"]
-    size = float(bytes_size)
-    unit = 0
-    while size > 1024 and unit < len(units) - 1:
-        size /= 1024
-        unit += 1
-    return f"{size:.2f}{units[unit]}" if unit > 0 else f"{int(size)}{units[unit]}"
-
-
-def get_size(path: Path) -> int:
-    total = 0
-    try:
-        if path.is_symlink():
-            return int(path.lstat().st_size or 0)
-        if path.is_file():
-            return int(path.stat().st_size or 0)
-        for sub in path.rglob("*"):
-            try:
-                if sub.is_file():
-                    total += int(sub.stat().st_size or 0)
-                elif sub.is_symlink():
-                    total += int(sub.lstat().st_size or 0)
-            except Exception:
-                continue
-    except Exception:
-        return 0
-    return total
-
-
-def is_old_enough(path: Path, older_than_sec: float, age_type: str) -> bool:
-    try:
-        st = path.stat()
-        if age_type == "mtime":
-            t = st.st_mtime
-        elif age_type == "atime":
-            t = st.st_atime
-        elif age_type == "ctime":
-            t = st.st_ctime
-        else:
-            t = st.st_mtime
-        return t < time.time() - older_than_sec
-    except Exception:
-        return False
-
-
-def sha256_of_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-# ----- Lock helpers (with stale detection) -----
-
-
-def _pid_alive(pid: int) -> bool:
-    if pid <= 0:
-        return False
-    try:
-        if hasattr(os, "kill"):
-            os.kill(pid, 0)
-            return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    except Exception:
-        try:
-            if sys.platform.startswith("win"):
-                import psutil  # type: ignore
-
-                return psutil.pid_exists(pid)
-        except Exception:
-            return True
-    return True
-
-
-def acquire_lock(
-    lock_path: Path, stale_seconds: int = DEFAULT_LOCK_TTL
-) -> Optional[int]:
-    """Create exclusive lockfile. If existing lock appears stale (PID gone and older than TTL), reap it."""
-    try:
-        if lock_path.exists():
-            try:
-                txt = lock_path.read_text()
-                pid = None
-                started = None
-                for line in txt.splitlines():
-                    if line.startswith("pid:"):
-                        try:
-                            pid = int(line.split(":", 1)[1])
-                        except Exception:
-                            pid = None
-                    if line.startswith("started:"):
-                        try:
-                            started = float(line.split(":", 1)[1])
-                        except Exception:
-                            started = None
-                if pid and _pid_alive(pid):
-                    return None
-                if started is not None and (time.time() - started) < stale_seconds:
-                    return None
-                try:
-                    lock_path.unlink()
-                    logger.warning("Removed stale lockfile %s", lock_path)
-                except Exception:
-                    logger.debug("Could not remove stale lockfile %s", lock_path)
-            except Exception:
-                return None
-        fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        os.write(fd, f"pid:{os.getpid()}\nstarted:{time.time()}\n".encode("utf-8"))
-        return fd
-    except FileExistsError:
-        return None
-    except Exception as e:
-        logger.debug("acquire_lock exception: %s", e)
-        return None
-
-
-def release_lock(fd: Optional[int], lock_path: Path) -> None:
-    try:
-        if fd is not None:
-            try:
-                os.close(fd)
-            except Exception:
-                pass
-        try:
-            lock_path.unlink(missing_ok=True)
-        except Exception:
-            pass
-    except Exception:
-        pass
-
-
-# ----- Atomic backup -----
-
-
-def backup_targets_atomic(
-    targets: List[Path], backup_root: Path, root: Path, name: Optional[str] = None
-) -> Optional[Tuple[Path, str]]:
-    backup_root.mkdir(parents=True, exist_ok=True)
-    timestamp = _dt.utcnow().strftime("%Y%m%d_%H%M%SZ")
-    archive_name = (
-        f"{name}_{timestamp}.zip" if name else f"cleanpy_backup_{timestamp}.zip"
-    )
-    final_path = backup_root / archive_name
-    tmp_fd, tmp_path = tempfile.mkstemp(
-        prefix=f".{archive_name}.", dir=str(backup_root)
-    )
-    os.close(tmp_fd)
-    tmp_path = Path(tmp_path)
-    symlink_manifest = []
-    try:
-        with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zf:
-            for p in targets:
-                try:
-                    rel = p.relative_to(root)
-                except Exception:
-                    rel = Path(p.name)
-                if p.is_symlink():
-                    try:
-                        target = os.readlink(p)
-                    except Exception:
-                        target = None
-                    symlink_manifest.append({"path": str(rel), "target": target})
-                    continue
-                if p.is_file():
-                    try:
-                        zf.write(p, arcname=rel)
-                    except Exception:
-                        logger.warning("Failed to write %s to archive", p)
-                elif p.is_dir():
-                    for sub in p.rglob("*"):
-                        if sub.is_file():
-                            try:
-                                arc = sub.relative_to(root)
-                            except Exception:
-                                arc = Path(sub.name)
-                            try:
-                                zf.write(sub, arcname=arc)
-                            except Exception:
-                                logger.debug("Skipping file in backup: %s", sub)
-            if symlink_manifest:
-                zf.writestr(
-                    "cleanpy_symlink_manifest.json",
-                    json.dumps({"symlinks": symlink_manifest}, indent=2),
-                )
-        sha = sha256_of_file(tmp_path)
-        os.replace(tmp_path, final_path)
-        shafile = final_path.with_suffix(final_path.suffix + ".sha256")
-        tmp_sha = str(shafile) + ".tmp"
-        with open(tmp_sha, "w", encoding="utf-8") as f:
-            f.write(sha + "  " + final_path.name + "\n")
-        os.replace(tmp_sha, shafile)
-        return final_path, sha
-    except Exception as e:
-        logger.error("Backup failed: %s", e)
-        try:
-            tmp_path.unlink(missing_ok=True)
-        except Exception:
-            pass
-        return None
-
-
-# ----- Safety helpers -----
-DANGEROUS_ROOTS = {
-    Path("/"),
-    Path.home(),
-    Path("/usr"),
-    Path("/bin"),
-    Path("/sbin"),
-    Path("/etc"),
-}
-
-
-def is_dangerous_root(p: Path) -> bool:
-    try:
-        p_res = p.resolve()
-    except Exception:
-        return True
-    for d in DANGEROUS_ROOTS:
-        try:
-            if str(p_res) == str(d.resolve()):
-                return True
-        except Exception:
-            continue
-    if len(p_res.parts) <= 2:
-        return True
-    return False
-
-
-# ----- Pretty interactive printing -----
-class Colors:
-    RED = "\033[0;31m"
-    GREEN = "\033[0;32m"
-    YELLOW = "\033[1;33m"
-    BLUE = "\033[0;34m"
-    CYAN = "\033[0;36m"
-    GRAY = "\033[0;90m"
-    NC = "\033[0m"
-
-
-class NullColors:
-    RED = GREEN = YELLOW = BLUE = CYAN = GRAY = NC = ""
-
-
-def get_colors(use_color: bool):
-    return Colors() if use_color else NullColors()
-
-
-def print_info(msg: str, colors):
-    print(f"{colors.BLUE}ℹ️  {msg}{colors.NC}")
-
-
-def print_success(msg: str, colors):
-    print(f"{colors.GREEN}✅ {msg}{colors.NC}")
-
-
-def print_warning(msg: str, colors):
-    print(f"{colors.YELLOW}⚠️  {msg}{colors.NC}")
-
-
-def print_error(msg: str, colors):
-    print(f"{colors.RED}❌ {msg}{colors.NC}")
-
-
-# ----- Deletion helpers -----
-
-
-def force_rmtree(path: Path):
-    def onerror(func, p: str, exc_info):
-        try:
-            os.chmod(p, stat.S_IWUSR)
-        except Exception:
-            pass
-        try:
-            func(p)
-        except Exception:
-            pass
-
-    shutil.rmtree(path, onerror=onerror)
-
-
-def force_unlink(path: Path):
-    try:
-        if not os.access(path, os.W_OK):
-            try:
-                os.chmod(path, stat.S_IWUSR)
-            except Exception:
-                pass
-        path.unlink(missing_ok=True)
-    except Exception:
-        pass
-
-
-# ----- Preview helpers (rich grouping) -----
-
-
-def summarize_groups(targets: dict) -> List[Tuple[str, int, int]]:
-    """Return list of tuples (group_name, item_count, total_bytes) sorted by total_bytes desc."""
-    res = []
-    for g, items in targets.items():
-        cnt = len(items)
-        size = sum(get_size(p) for p in items)
-        res.append((g, cnt, size))
-    res.sort(key=lambda x: (x[2], x[1]), reverse=True)
-    return res
-
-
-def print_rich_preview(root_path: Path, targets: dict, sizes: dict, colors):
-    # summary table
-    summary = summarize_groups(targets)
-    print()
-    print(
-        f"{colors.CYAN}=== Preview: grouped cleanup summary for {root_path}{colors.NC}"
-    )
-    print(f"{colors.GRAY}Groups shown sorted by total size (largest first){colors.NC}")
-    print()
-    # header
-    print(
-        f" {colors.BLUE}Group{' ' * 30} Items   Size{' ' * 10}Paths (truncated){colors.NC}"
-    )
-    print(f" {colors.BLUE}{'-' * 70}{colors.NC}")
-    for g, cnt, total in summary:
-        size_s = format_bytes(total)
-        name = g
-        print(f" {colors.YELLOW}{name:35}{colors.NC} {cnt:5d}   {size_s:12} ")
-    print()
-    # detailed listing for each group (top 30 entries per group to avoid flood)
-    for g, cnt, total in summary:
-        print(
-            f"{colors.BLUE}\n📁 {g} — {cnt} item(s), {format_bytes(total)}{colors.NC}"
-        )
-        group_items = sorted(targets.get(g, []), key=lambda p: (p.is_dir(), str(p)))
-        preview_items = group_items[:30]
-        for p in preview_items:
-            try:
-                rel = p.relative_to(root_path)
-            except Exception:
-                rel = p
-            suffix = (
-                "/"
-                if p.is_dir() and not p.is_symlink()
-                else " (symlink)"
-                if p.is_symlink()
-                else ""
-            )
-            print(f"   {rel}{suffix} — {format_bytes(sizes.get(p, 0))}")
-        if cnt > len(preview_items):
-            print(f"   ... and {cnt - len(preview_items)} more items in this group ...")
-    print()
-
-
-# ----- Main -----
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="cleanpy_final_prod.py", description="Production-grade Python cleanup tool"
+        prog="pypurge", description="Production-grade Python cleanup tool"
     )
     parser.add_argument(
         "root",
@@ -563,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--lockfile",
-        default=".cleanpy.lock",
+        default=".pypurge.lock",
         help="Path to lockfile (relative to each root).",
     )
     parser.add_argument(
@@ -683,7 +245,9 @@ def main(argv: list[str] | None = None) -> int:
         try:
             # load config
             config = {}
-            cfg_path = Path(args.config) if args.config else root_path / ".cleanpy.json"
+            cfg_path = (
+                Path(args.config) if args.config else root_path / ".pypurge.json"
+            )
             if cfg_path.exists():
                 try:
                     with open(cfg_path) as f:
@@ -775,76 +339,16 @@ def main(argv: list[str] | None = None) -> int:
             older_than_sec = args.older_than * 86400 if args.older_than > 0 else 0
 
             # scan
-            targets = defaultdict(list)
-            for root, dirs, files in os.walk(
-                root_path, topdown=True, followlinks=False
-            ):
-                dirs[:] = [d for d in dirs if d not in exclude_dirs]
-                try:
-                    rel_root = Path(root).relative_to(root_path)
-                except Exception:
-                    rel_root = Path(".")
-                for d in list(dirs):
-                    d_path = Path(root) / d
-                    if d_path.is_symlink() and not args.delete_symlinks:
-                        continue
-                    if older_than_sec and not is_old_enough(
-                        d_path, older_than_sec, args.age_type
-                    ):
-                        continue
-                    rel_str = str(rel_root / d)
-                    if any(
-                        (pt == "re" and pat.search(rel_str))
-                        or (pt == "glob" and fnmatch.fnmatch(rel_str, pat))
-                        for pt, pat in exclude_patterns
-                    ):
-                        dirs.remove(d)
-                        continue
-                    matched = False
-                    for g, pats in dir_groups.items():
-                        for pat in pats:
-                            try:
-                                if fnmatch.fnmatch(d, pat) or fnmatch.fnmatch(
-                                    rel_str, pat
-                                ):
-                                    targets[g].append(d_path)
-                                    matched = True
-                                    break
-                            except Exception:
-                                continue
-                        if matched:
-                            break
-                    if matched and d in dirs:
-                        dirs.remove(d)
-                for f in files:
-                    f_path = Path(root) / f
-                    if f_path.is_symlink() and not args.delete_symlinks:
-                        continue
-                    if older_than_sec and not is_old_enough(
-                        f_path, older_than_sec, args.age_type
-                    ):
-                        continue
-                    rel_str = str(rel_root / f)
-                    if any(
-                        (pt == "re" and pat.search(rel_str))
-                        or (pt == "glob" and fnmatch.fnmatch(rel_str, pat))
-                        for pt, pat in exclude_patterns
-                    ):
-                        continue
-                    for g, pats in file_groups.items():
-                        matched = False
-                        for pat in pats:
-                            try:
-                                if fnmatch.fnmatch(f, pat) or fnmatch.fnmatch(
-                                    rel_str, pat
-                                ):
-                                    targets[g].append(f_path)
-                                    matched = True
-                                    break
-                            except Exception:
-                                continue
-                        if matched:
-                            break
+            targets = scan_for_targets(
+                root_path,
+                dir_groups,
+                file_groups,
+                exclude_dirs,
+                exclude_patterns,
+                older_than_sec,
+                args.age_type,
+                args.delete_symlinks,
+            )
 
             all_targets = [
                 p for group_targets in targets.values() for p in group_targets
