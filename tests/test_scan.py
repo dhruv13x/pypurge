@@ -1,16 +1,16 @@
 import shutil
 import unittest
 from pathlib import Path
+from pyfakefs import fake_filesystem_unittest
 
 from pypurge.modules.scan import scan_for_targets
 
 
-class TestScan(unittest.TestCase):
+class TestScan(fake_filesystem_unittest.TestCase):
     def setUp(self):
+        self.setUpPyfakefs()  # Initialize fake filesystem first
         self.test_dir = Path("test_scan_dir")
-        if self.test_dir.exists():
-            shutil.rmtree(self.test_dir)
-        self.test_dir.mkdir()
+        self.fs.create_dir(self.test_dir)  # Create directory in fake filesystem
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)

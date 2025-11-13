@@ -3,21 +3,19 @@ import unittest
 import unittest.mock
 import zipfile
 from pathlib import Path
+from pyfakefs import fake_filesystem_unittest
 
 from pypurge.modules.backup import backup_targets_atomic
 
 
-class TestBackup(unittest.TestCase):
+class TestBackup(fake_filesystem_unittest.TestCase):
     def setUp(self):
+        self.setUpPyfakefs()  # Initialize fake filesystem first
         self.test_dir = Path("test_backup_dir")
-        if self.test_dir.exists():
-            shutil.rmtree(self.test_dir)
-        self.test_dir.mkdir()
+        self.fs.create_dir(self.test_dir)  # Create directory in fake filesystem
 
         self.backup_dir = Path("backup_dir")
-        if self.backup_dir.exists():
-            shutil.rmtree(self.backup_dir)
-        self.backup_dir.mkdir()
+        self.fs.create_dir(self.backup_dir)  # Create directory in fake filesystem
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
