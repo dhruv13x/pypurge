@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from src.pypurge.modules.deletion import force_rmtree, force_unlink
+from pypurge.modules.deletion import force_rmtree, force_unlink
 
 
 class TestDeletion(unittest.TestCase):

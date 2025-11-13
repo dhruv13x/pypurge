@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from src.pypurge.modules.safety import is_dangerous_root
+from pypurge.modules.safety import is_dangerous_root
 
 
 class TestSafety(unittest.TestCase):

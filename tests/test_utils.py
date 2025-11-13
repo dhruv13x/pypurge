@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from src.pypurge.modules.utils import (
+from pypurge.modules.utils import (
     format_bytes,
     get_size,
     is_old_enough,

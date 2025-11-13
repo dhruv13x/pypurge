@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from src.pypurge.modules.locking import acquire_lock, release_lock
+from pypurge.modules.locking import acquire_lock, release_lock
 
 
 class TestLocking(unittest.TestCase):
