@@ -30,8 +30,12 @@ from .modules.ui import (
     print_warning,
 )
 from .modules.utils import format_bytes, get_size
+from importlib import metadata
 
-__version__ = "6.0.0"
+try:
+    __version__ = metadata.version("pypurge")
+except metadata.PackageNotFoundError:
+    __version__ = "0.0.0"
 
 # Exit codes
 EXIT_OK = 0
