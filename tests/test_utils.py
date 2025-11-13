@@ -1,3 +1,4 @@
+import shutil
 import unittest
 from pathlib import Path
 from pypurge.modules.utils import (
@@ -18,6 +19,15 @@ class TestUtils(unittest.TestCase):
             f.write("hello")
         self.assertEqual(get_size(Path("test_file.txt")), 5)
         Path("test_file.txt").unlink()
+
+        test_dir = Path("test_dir")
+        if test_dir.exists():
+            shutil.rmtree(test_dir)
+        test_dir.mkdir()
+        with open(test_dir / "test_file.txt", "w") as f:
+            f.write("hello")
+        self.assertEqual(get_size(test_dir), 5)
+        shutil.rmtree(test_dir)
 
     def test_is_old_enough(self):
         with open("test_file.txt", "w") as f:

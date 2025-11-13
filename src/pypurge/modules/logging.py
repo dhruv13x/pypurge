@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from datetime import datetime as _dt
+from datetime import datetime as _dt, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -9,7 +9,7 @@ from typing import Optional
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         payload = {
-            "ts": _dt.utcfromtimestamp(record.created).isoformat() + "Z",
+            "ts": _dt.fromtimestamp(record.created, timezone.utc).isoformat() + "Z",
             "level": record.levelname,
             "msg": record.getMessage(),
         }
