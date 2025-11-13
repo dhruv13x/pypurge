@@ -3,7 +3,7 @@ import logging
 import os
 import tempfile
 import zipfile
-from datetime import datetime as _dt
+from datetime import datetime as _dt, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -16,7 +16,7 @@ def backup_targets_atomic(
     targets: List[Path], backup_root: Path, root: Path, name: Optional[str] = None
 ) -> Optional[Tuple[Path, str]]:
     backup_root.mkdir(parents=True, exist_ok=True)
-    timestamp = _dt.utcnow().strftime("%Y%m%d_%H%M%SZ")
+    timestamp = _dt.now(timezone.utc).strftime("%Y%m%d_%H%M%SZ")
     archive_name = (
         f"{name}_{timestamp}.zip" if name else f"cleanpy_backup_{timestamp}.zip"
     )
