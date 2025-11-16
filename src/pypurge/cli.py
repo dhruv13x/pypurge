@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# src/pypurge/cli.py
+
 """
 pypurge - A production-grade Python cleanup utility.
 """
@@ -31,6 +33,7 @@ from .modules.ui import (
 )
 from .modules.utils import format_bytes, get_size
 from importlib import metadata
+from .banner import print_logo
 
 try:
     __version__ = metadata.version("pypurge")
@@ -53,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(argv: list[str] | None = None) -> int:
+    print_logo()
     parser = argparse.ArgumentParser(
         prog="pypurge", description="Production-grade Python cleanup tool"
     )

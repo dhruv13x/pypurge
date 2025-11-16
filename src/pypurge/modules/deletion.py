@@ -1,3 +1,5 @@
+# src/pypurge/modules/deletion.py
+
 import os
 import shutil
 import stat

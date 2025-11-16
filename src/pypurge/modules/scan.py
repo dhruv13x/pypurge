@@ -1,3 +1,5 @@
+# src/pypurge/modules/scan.py
+
 import fnmatch
 import os
 import re

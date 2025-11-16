@@ -1,3 +1,5 @@
+# src/pypurge/modules/logging.py
+
 import json
 import logging
 import sys

@@ -1,3 +1,5 @@
+# src/pypurge/modules/safety.py
+
 from pathlib import Path
 
 DANGEROUS_ROOTS = {

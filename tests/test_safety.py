@@ -1,3 +1,5 @@
+# tests/test_safety.py
+
 import unittest
 from pathlib import Path
 from pypurge.modules.safety import is_dangerous_root

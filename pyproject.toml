@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypurge"
-version = "1.0.0"
+version = "2.0.0"
 description = "Safe Python project cleanup utility — purge caches, build artifacts, test leftovers, and env clutter with smart protection."
 readme = "README.md"
 requires-python = ">=3.8"

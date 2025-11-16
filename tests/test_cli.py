@@ -1,3 +1,5 @@
+# tests/test_cli.py
+
 import shutil
 import unittest
 import unittest.mock
