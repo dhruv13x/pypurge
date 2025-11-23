@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypurge"
-version = "2.0.0"
+version = "3.0.0"
 description = "Safe Python project cleanup utility — purge caches, build artifacts, test leftovers, and env clutter with smart protection."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -75,19 +75,22 @@ ignore_missing_imports = true
 python_version = "3.11"
 
 [tool.pytest.ini_options]
-pythonpath = "src"
+pythonpath = ["src"]
 testpaths = ["tests"]
+
 addopts = [
   "-ra",
   "-v",
   "--strict-config",
   "--strict-markers",
   "--tb=short",
-  "--cov",
-  "--cov-report=term-missing",
-  "--cov-report=html",
+
+  "--cov=src/pypurge",
   "--cov-report=term-missing:skip-covered",
-    "--cov-fail-under=90",
+  "--cov-report=html",
+
+  "--cov-fail-under=90",
 ]
+
 log_cli = true
 log_cli_level = "INFO"
