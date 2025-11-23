@@ -4,6 +4,7 @@ import logging
 import shutil
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from pypurge.modules.logging import setup_logging
 
@@ -37,6 +38,14 @@ class TestLogging(unittest.TestCase):
         logger = logging.getLogger("pypurge")
         logger.info("test")
         self.assertTrue(self.log_file.exists())
+
+
+    def test_setup_logging_file_handler_fail(self):
+        with patch("logging.FileHandler", side_effect=Exception("Mocked FileHandler Error")):
+            with self.assertLogs("pypurge.modules.logging", level="WARNING") as cm:
+                setup_logging("text", self.log_file, logging.INFO, rotate=False)
+                self.assertIn("Failed to open log file", cm.output[0])
+        self.assertFalse(self.log_file.exists())
 
 
 if __name__ == "__main__":
