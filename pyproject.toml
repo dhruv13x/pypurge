@@ -44,7 +44,7 @@ classifiers = [
 ]
 
 dependencies = [
-  # no external deps — stays lightweight
+  "rich>=13.0.0"
 ]
 
 [project.optional-dependencies]
@@ -90,7 +90,7 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 
 # Async projects are common in your stack
-asyncio_mode = "auto"
+# asyncio_mode = "auto"
 
 # Global pytest options
 addopts = [
@@ -101,17 +101,11 @@ addopts = [
   "--tb=short",
   "--showlocals",
   "--import-mode=importlib",
-
-  # Time & perf
-  "--timeout=10",
-  "--durations=10",
-
-  # Coverage: target the real package
   "--cov=src/pypurge",
   "--cov-report=term-missing:skip-covered",
   "--cov-report=html",
   "--cov-report=xml",
-  "--cov-fail-under=85",
+  "--cov-fail-under=95"
 ]
 
 log_cli = true
@@ -122,6 +116,6 @@ branch = true
 source = ["src/pypurge"]
 
 [tool.coverage.report]
-fail_under = 85
+fail_under = 95
 show_missing = true
 skip_covered = true

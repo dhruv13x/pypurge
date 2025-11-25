@@ -515,13 +515,19 @@ def main(argv: list[str] | None = None) -> int:
     return EXIT_OK
 
 
-if __name__ == "__main__":
+def _main():
+    """Wrapper for the main function to handle exceptions."""
+    exit_code = EXIT_OK
     try:
         exit_code = main()
     except KeyboardInterrupt:
         logger.info("Interrupted by user.")
-        sys.exit(EXIT_CANCELLED)
+        exit_code = EXIT_CANCELLED
     except Exception as e:
         logger.exception("Unexpected error: %s", e)
-        sys.exit(EXIT_UNKNOWN_ERROR)
-    sys.exit(exit_code)
+        exit_code = EXIT_UNKNOWN_ERROR
+    finally:
+        sys.exit(exit_code)
+
+if __name__ == "__main__":
+    _main()
