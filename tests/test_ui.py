@@ -5,6 +5,7 @@ import shutil
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 from pypurge.modules.ui import (
     Colors,
@@ -47,6 +48,22 @@ class TestUi(unittest.TestCase):
         with io.StringIO() as buf, redirect_stdout(buf):
             print_error("error", colors)
             self.assertIn("error", buf.getvalue())
+
+    def test_print_rich_preview_truncation(self):
+        """Test preview output truncation when many items exist."""
+        targets = {"group1": []}
+        sizes = {}
+        for i in range(35):
+            p = self.test_dir / f"file{i}"
+            p.touch()
+            targets["group1"].append(p)
+            sizes[p] = 10
+            
+        colors = get_colors(True)
+        with io.StringIO() as buf, redirect_stdout(buf):
+            print_rich_preview(self.test_dir, targets, sizes, colors)
+            output = buf.getvalue()
+            self.assertIn("more items in this group", output)
 
     def test_summarize_groups(self):
         (self.test_dir / "file1").write_text("hello")

@@ -26,7 +26,7 @@ def test_force_rmtree_removes_readonly_file(protected_dir):
     base_dir, protected_file = protected_dir
 
     # Verify that the file is initially read-only
-    assert not os.access(protected_file, os.W_OK)
+    assert not (os.stat(protected_file).st_mode & stat.S_IWUSR)
 
     force_rmtree(base_dir)
 

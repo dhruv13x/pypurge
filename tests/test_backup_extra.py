@@ -162,3 +162,53 @@ def test_backup_dir_does_not_exist(fs):
 
     assert result is not None
     assert backup_dir.exists()
+
+def test_backup_full_coverage(fs):
+    """Test backup with mixed targets to cover file/dir recursion logic."""
+    from pypurge.modules.backup import backup_targets_atomic
+    
+    root = Path("/test_backup_full")
+    fs.create_dir(root)
+    
+    # File target
+    f1 = root / "f1.txt"
+    fs.create_file(f1, contents="f1")
+    
+    # Dir target with subfiles
+    d1 = root / "d1"
+    fs.create_dir(d1)
+    sub1 = d1 / "sub1.txt"
+    fs.create_file(sub1, contents="sub1")
+    
+    # Targets list
+    targets = [f1, d1]
+    
+    backup_root = root / "backups"
+    backup_root.mkdir()
+    
+    res = backup_targets_atomic(targets, backup_root, root, name="full")
+    assert res is not None
+    zip_path, sha = res
+    
+    assert zip_path.exists()
+    
+    import zipfile
+    with zipfile.ZipFile(zip_path, "r") as zf:
+        names = zf.namelist()
+        assert "f1.txt" in names
+        assert "d1/sub1.txt" in names
+
+def test_backup_special_file(fs):
+    """Test backup ignoring special files (pipes/sockets)."""
+    fs.create_dir("/backup")
+    fs.create_dir("/src")
+    
+    p = MagicMock()
+    p.relative_to.return_value = Path("special")
+    p.is_symlink.return_value = False
+    p.is_file.return_value = False
+    p.is_dir.return_value = False
+    
+    from pypurge.modules.backup import backup_targets_atomic
+    res = backup_targets_atomic([p], Path("/backup"), Path("/src"))
+    assert res is not None

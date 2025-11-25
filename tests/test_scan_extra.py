@@ -158,3 +158,26 @@ def test_scan_older_than(fs):
 
     assert f_old in targets["g"]
     assert f_new not in targets["g"]
+
+def test_scan_dir_removal(fs):
+    """Test that directories matching a group are removed from traversal."""
+    root = Path("/test_scan_removal")
+    fs.create_dir(root / "cache_dir")
+    (root / "cache_dir" / "ignored_file").touch()
+    
+    dir_groups = {"Cache": ["cache_dir"]}
+    file_groups = {"Files": ["ignored_file"]}
+    
+    # scan_for_targets should match cache_dir in Cache, and NOT traverse into it
+    # so ignored_file should NOT be in Files group (if we assume ignored_file would match otherwise)
+    
+    from pypurge.modules.scan import scan_for_targets
+    targets = scan_for_targets(root, dir_groups, file_groups, set(), [], 0, "mtime", False)
+    
+    assert root / "cache_dir" in targets["Cache"]
+    # Ensure ignored_file is NOT found because its parent was removed from walk
+    assert root / "cache_dir" / "ignored_file" not in targets.get("Files", [])
+    
+    # Verify positive control: if dir is NOT matched, file IS found
+    targets_control = scan_for_targets(root, {}, file_groups, set(), [], 0, "mtime", False)
+    assert root / "cache_dir" / "ignored_file" in targets_control["Files"]

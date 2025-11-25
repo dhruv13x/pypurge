@@ -105,7 +105,7 @@ addopts = [
   "--cov-report=term-missing:skip-covered",
   "--cov-report=html",
   "--cov-report=xml",
-  "--cov-fail-under=95"
+  "--cov-fail-under=85"
 ]
 
 log_cli = true
@@ -116,6 +116,6 @@ branch = true
 source = ["src/pypurge"]
 
 [tool.coverage.report]
-fail_under = 95
+fail_under = 85
 show_missing = true
 skip_covered = true

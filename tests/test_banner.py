@@ -29,9 +29,13 @@ def test_blend():
     assert color_half.startswith("#")
     assert len(color_half) == 7
 
-def test_print_logo_procedural_palette(monkeypatch):
-    """Test logo printing with procedural palette generation."""
-    monkeypatch.setenv("CREATE_DUMP_PALETTE", "invalid")
+    with patch("rich.console.Console.print") as mock_print:
+        print_logo()
+        assert mock_print.call_count > 1
+
+def test_print_logo_fixed_palette(monkeypatch):
+    """Test logo printing with a fixed palette index."""
+    monkeypatch.setenv("CREATE_DUMP_PALETTE", "0")
     with patch("rich.console.Console.print") as mock_print:
         print_logo()
         assert mock_print.call_count > 1
