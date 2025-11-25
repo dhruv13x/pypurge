@@ -91,6 +91,18 @@ Clean a specific folder
 
 pypurge myproject/
 
+Exclude files or directories
+
+pypurge --exclude "*.log" --exclude "re:.*tmp.*"
+
+Force deletion of stubborn files
+
+pypurge --force
+
+Run in non-interactive (quiet) mode
+
+pypurge --quiet
+
 Backup before deleting 🛟
 
 pypurge --backup
@@ -128,17 +140,52 @@ Build/Packaging               12      2.1MB
 
 ---
 
-⚙️ Configuration
+### ⚙️ Advanced Usage & Configuration
 
-Create a .pypurge.json in your project root:
+While `pypurge` works great out of the box, you can fine-tune its behavior with command-line arguments or a configuration file.
 
+#### CLI Arguments
+
+| Argument                  | Short | Description                                                              | Default                  |
+| ------------------------- | ----- | ------------------------------------------------------------------------ | ------------------------ |
+| `root...`                 |       | Directories to clean.                                                    | `.` (current directory)  |
+| `--preview`               | `-p`  | Preview targets without deleting anything.                               | `False`                  |
+| `--yes`                   | `-y`  | Skip the interactive confirmation prompt.                                | `False`                  |
+| `--quiet`                 | `-q`  | Suppress all output except for critical errors.                          | `False`                  |
+| `--clean-venv`            |       | Include virtual environment directories (`.venv`, `venv`, etc.) in the scan. | `False`                  |
+| `--exclude <pattern>`     |       | Exclude files/directories matching a glob or `re:` pattern.              | (none)                   |
+| `--older-than <days>`     |       | Only target files older than `N` days.                                   | `0` (all ages)           |
+| `--age-type <type>`       |       | Choose age metric: `mtime` (modified), `atime` (accessed), `ctime` (created). | `mtime`                  |
+| `--force`                 |       | Attempt to `chmod` files to ensure deletion.                             | `False`                  |
+| `--backup`                |       | Create a `.zip` backup of all targets before deletion.                   | `False`                  |
+| `--backup-dir <path>`     |       | Specify a directory to store backups.                                    | (root of scan)           |
+| `--backup-name <name>`    |       | Set a reproducible base name for backup archives.                        | (auto-generated)         |
+| `--delete-symlinks`       |       | Also delete symbolic links (the link itself, not the target).            | `False`                  |
+| `--config <path>`         |       | Path to a `.pypurge.json` configuration file.                            | (auto-detect in root)    |
+| `--allow-broad-root`      |       | **DANGEROUS**: Allow running in broad directories like `/` or `$HOME`.     | `False`                  |
+| `--allow-root`            |       | **DANGEROUS**: Allow running as the `root` user.                         | `False`                  |
+| `--lockfile <name>`       |       | Name of the lockfile to prevent concurrent runs.                         | `.pypurge.lock`          |
+| `--lock-stale-seconds <N>`|       | Time in seconds before a lock is considered stale.                       | `86400` (24 hours)       |
+| `--log-file <path>`       |       | Path to a file for logging output.                                       | (none)                   |
+| `--log-format <format>`   |       | Log format: `text` or `json`.                                            | `text`                   |
+| `--no-color`              |       | Disable colored terminal output.                                         | `False`                  |
+| `--version`               | `-v`  | Show the application version and exit.                                   | `False`                  |
+
+#### Configuration File
+
+You can create a `.pypurge.json` file in the root of your project to define custom patterns and exclusions:
+
+```json
 {
-  "exclude_patterns": ["re:.*migrations.*"],
+  "exclude_patterns": ["re:.*migrations.*", "data/"],
   "dir_groups": {
-    "CustomGroup": ["temp_run", "scratch"]
+    "CustomData": ["temp_run/", "scratch/"]
+  },
+  "file_groups": {
+    "Logs": ["*.log"]
   }
 }
-
+```
 
 ---
 
@@ -164,6 +211,42 @@ Running as root also requires:
 
 ---
 
+### 🏗️ Architecture
+
+The project follows a modular structure to separate concerns:
+
+```
+src/pypurge/
+├── cli.py          # Main entry point, argument parsing
+└── modules/
+    ├── backup.py   # Atomic backup logic
+    ├── deletion.py # Safe file/directory removal
+    ├── locking.py  # Cross-process lock management
+    ├── logging.py  # Logging setup
+    ├── safety.py   # Guards against dangerous operations
+    ├── scan.py     # Core target scanning logic
+    ├── ui.py       # Rich terminal output
+    └── utils.py    # Helper functions
+```
+
+The core logic flow is:
+1.  **Parse Arguments**: `cli.py` handles user input.
+2.  **Acquire Lock**: `locking.py` prevents concurrent runs in the same directory.
+3.  **Scan for Targets**: `scan.py` identifies files and directories to be deleted based on predefined and custom patterns.
+4.  **Confirm & Backup**: The user is prompted to confirm, and an optional backup is created using `backup.py`.
+5.  **Delete**: `deletion.py` removes the targets.
+6.  **Release Lock**: The lock is released.
+
+---
+
+### 🗺️ Roadmap
+
+-   [ ] **Plugin System**: Allow users to define custom cleanup modules.
+-   [ ] **More Output Formats**: Add support for `csv` or `html` reports.
+-   [ ] **Configuration Wizard**: An interactive mode to generate a `.pypurge.json` file.
+
+---
+
 🤝 Trusted Publishing & CI
 
 This project uses PyPI Trusted Publishing (OIDC) + GitHub Actions for secure releases.
@@ -178,9 +261,9 @@ git push origin v0.1.0
 
 🧠 Requirements
 
-Python >= 3.10
+Python >= 3.8
 
-No runtime dependencies
+- **rich** (for beautiful console output)
 
 
 
