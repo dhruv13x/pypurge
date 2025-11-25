@@ -241,9 +241,9 @@ The core logic flow is:
 
 ### 🗺️ Roadmap
 
--   [ ] **Plugin System**: Allow users to define custom cleanup modules.
--   [ ] **More Output Formats**: Add support for `csv` or `html` reports.
--   [ ] **Configuration Wizard**: An interactive mode to generate a `.pypurge.json` file.
+Our vision for `pypurge` is just getting started. We have ambitious plans for new features, integrations, and AI-powered capabilities.
+
+To see the full, detailed plan, please check out our official [**Project Roadmap**](ROADMAP.md).
 
 ---
 
