@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import runpy
 import signal
 import sys
 import stat
@@ -215,3 +216,136 @@ def test_main_exclude_regex_error(deep_fs):
     fs = deep_fs
     argv = [TEST_ROOT, "--exclude", "re:("]
     main(argv)
+
+from importlib import metadata
+
+@pytest.fixture
+def pretty_tty(monkeypatch):
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+
+def test_version_fallback():
+    """Test __version__ fallback when package is not found."""
+    with patch("importlib.metadata.version", side_effect=metadata.PackageNotFoundError):
+        import importlib
+        from pypurge import cli
+        importlib.reload(cli)
+        assert cli.__version__ == "0.0.0"
+        # Reload again to restore for other tests
+        importlib.reload(cli)
+
+def test_running_as_root_exception(deep_fs):
+    """Test the running_as_root check when os.geteuid is not available."""
+    # pyfakefs's os module does not have geteuid, which simulates this case.
+    with patch("pypurge.cli.acquire_lock", return_value=123):
+        with patch("pypurge.cli.release_lock"):
+            argv = [TEST_ROOT, "--preview", "--allow-root"]
+            assert main(argv) == EXIT_OK
+
+def test_main_permission_failures_root_check_pretty(monkeypatch, pretty_tty):
+    """Test main failing when running as root without --allow-root with pretty output."""
+    monkeypatch.setattr(os, "geteuid", lambda: 0)
+    with patch("pypurge.cli.print_error") as mock_print_error:
+        argv = [TEST_ROOT]
+        assert main(argv) == EXIT_DANGEROUS_ROOT
+        mock_print_error.assert_called_once()
+
+def test_main_dangerous_root_check_pretty(fs, pretty_tty):
+    """Test main failing when target is dangerous root with pretty output."""
+    with patch("pypurge.cli.print_warning") as mock_print_warning:
+        argv = ["/"]
+        assert main(argv) == EXIT_DANGEROUS_ROOT
+        mock_print_warning.assert_called_once()
+
+def test_main_lock_failure_pretty(deep_fs, pretty_tty):
+    """Test main when lock acquisition fails with pretty output."""
+    fs = deep_fs
+    with patch("pypurge.cli.acquire_lock", return_value=None):
+        with patch("pypurge.cli.print_error") as mock_print_error:
+            argv = [TEST_ROOT, "--allow-root"]
+            assert main(argv) == EXIT_LOCK_ERROR
+            mock_print_error.assert_called_once()
+
+def test_main_signal_handling_exception(deep_fs):
+    """Test signal handling setup failure."""
+    fs = deep_fs
+    with patch("signal.signal", side_effect=Exception("Signal setup failed")):
+        argv = [TEST_ROOT, "--preview", "--allow-root"]
+        # should not raise, just pass
+        main(argv)
+
+def test_main_quiet_flag(deep_fs):
+    """Test the --quiet flag."""
+    fs = deep_fs
+    file_path = f"{TEST_ROOT}/file.tmp"
+    fs.create_file(file_path)
+    with patch("pypurge.cli.scan_for_targets", return_value={"group": [Path(file_path)]}):
+        with patch("pypurge.cli.logger.info") as mock_log:
+            argv = [TEST_ROOT, "--quiet", "--yes", "--allow-root"]
+            main(argv)
+            assert any("Found" in str(c) for c in mock_log.call_args_list)
+
+def test_main_config_file_custom_groups(deep_fs):
+    """Test config file with custom groups."""
+    fs = deep_fs
+    config_path = Path(f"{TEST_ROOT}/config.json")
+    config_data = {
+        "dir_groups": {"Custom Dirs": ["custom_dir"]},
+        "file_groups": {"Custom Files": ["*.custom"]},
+    }
+    fs.create_file(config_path, contents=json.dumps(config_data))
+    custom_dir = Path(f"{TEST_ROOT}/custom_dir")
+    fs.create_dir(custom_dir)
+    custom_file = Path(f"{TEST_ROOT}/file.custom")
+    fs.create_file(custom_file)
+
+    with patch("pypurge.cli.scan_for_targets", return_value={"Custom Dirs": [custom_dir], "Custom Files": [custom_file]}):
+        argv = [TEST_ROOT, "--config", str(config_path), "--preview", "--allow-root"]
+        assert main(argv) == EXIT_OK
+
+def test_main_rmtree_failure(deep_fs):
+    """Test that main handles shutil.rmtree failures."""
+    fs = deep_fs
+    dir_path = Path(f"{TEST_ROOT}/dir_to_delete")
+    fs.create_dir(dir_path)
+    with patch("pypurge.cli.scan_for_targets", return_value={"group": [dir_path]}):
+        with patch("shutil.rmtree", side_effect=OSError("rmtree failed")):
+            argv = [TEST_ROOT, "--yes", "--allow-root"]
+            assert main(argv) == EXIT_PARTIAL_FAILURE
+
+def test_main_entry_point_keyboard_interrupt():
+    """Test the __main__ entry point with KeyboardInterrupt."""
+    with patch("pypurge.cli.main", side_effect=KeyboardInterrupt):
+        with pytest.raises(SystemExit) as excinfo:
+            from pypurge.cli import _main
+            _main()
+        assert excinfo.value.code == EXIT_CANCELLED
+
+def test_main_entry_point_unexpected_error():
+    """Test the __main__ entry point with an unexpected error."""
+    with patch("pypurge.cli.main", side_effect=Exception("Unexpected error")):
+        with pytest.raises(SystemExit) as excinfo:
+            from pypurge.cli import _main
+            _main()
+        assert excinfo.value.code == EXIT_UNKNOWN_ERROR
+
+def test_signal_handler_exit(monkeypatch):
+    """Test the signal handler's exit behavior."""
+    monkeypatch.setattr(sys, "exit", lambda code: (_ for _ in ()).throw(SystemExit(code)))
+
+    with patch("pypurge.cli.release_lock") as mock_release:
+        # The signal handler is defined inside main, so we need to call main
+        # to define it, then we can call it.
+        # We'll use a mock to capture the handler function.
+        handler = None
+        def mock_signal(signum, frame):
+            nonlocal handler
+            handler = frame
+
+        with patch("signal.signal", mock_signal):
+            main([TEST_ROOT, "--preview", "--allow-root"])
+
+        # Now call the handler if it was captured
+        if handler:
+            with pytest.raises(SystemExit) as excinfo:
+                handler(signal.SIGINT, None)
+            assert excinfo.value.code == EXIT_CANCELLED

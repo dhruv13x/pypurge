@@ -147,3 +147,18 @@ def test_backup_symlink_manifest_write(fs):
     path, sha = res
     with zipfile.ZipFile(path) as zf:
         assert "cleanpy_symlink_manifest.json" in zf.namelist()
+
+def test_backup_dir_does_not_exist(fs):
+    """Test that the backup directory is created if it does not exist."""
+    from pypurge.modules.backup import backup_targets_atomic
+
+    fs.create_file("/test/file1")
+    targets = [Path("/test/file1")]
+    backup_dir = Path("/backup/new_dir")
+
+    assert not backup_dir.exists()
+
+    result = backup_targets_atomic(targets, backup_dir, Path("/test"))
+
+    assert result is not None
+    assert backup_dir.exists()
