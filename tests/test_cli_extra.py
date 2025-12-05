@@ -227,11 +227,11 @@ def test_version_fallback():
     """Test __version__ fallback when package is not found."""
     with patch("importlib.metadata.version", side_effect=metadata.PackageNotFoundError):
         import importlib
-        from pypurge import cli
-        importlib.reload(cli)
-        assert cli.__version__ == "0.0.0"
+        from pypurge.modules import args
+        importlib.reload(args)
+        assert args.__version__ == "0.0.0"
         # Reload again to restore for other tests
-        importlib.reload(cli)
+        importlib.reload(args)
 
 def test_running_as_root_exception(deep_fs):
     """Test the running_as_root check when os.geteuid is not available."""
