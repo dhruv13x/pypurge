@@ -26,11 +26,7 @@
 <!-- License -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-<!-- Docs -->
-[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://your-docs-link)
-
 </div>
-
 
 ---
 
@@ -43,138 +39,83 @@ No more `find . -name __pycache__ -delete` or risky scripts — **clean confiden
 
 ---
 
-## ✅ Key Features
+## 🚀 Quick Start
 
-- 🔐 **Safety-first design** — prevents accidental root-level deletion
-- 🎯 **Python-specific cleanup**
-  - `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `build/`, `dist/`, etc.
-- 🧠 **Smart preview mode** — shows counts, groups & disk usage before deleting
-- 🪄 **Configuration Wizard** — easily setup exclusions with `pypurge --init`
-- 🪪 **Stale lock & lockfile protection** — avoids multi-process conflicts
-- 🕒 **Age-based filtering** — delete only items older than N days
-- 📦 **Atomic backup mode** — zip backup with SHA256 manifest
-- 🧪 Cleans testing & packaging leftovers
-- 🧹 Optional **virtualenv purge**
-- 💬 Colored interactive interface (or JSON for automation)
-- 🛑 Root & dangerous directory protection
-- ⚙️ Configurable via JSON (`.pypurge.json`)
-- 🤖 Works safely in CI & scripts
+### Prerequisites
+*   Python 3.8+
+*   `rich` (installed automatically)
 
----
-
-## 📦 Installation
+### Installation
 
 ```bash
 pip install pypurge
+```
 
-Or in development mode:
+### Usage
 
-pip install -e .
-
-
----
-
-🚀 Usage
-
-Clean current project interactively
-
+**Clean current project interactively:**
+```bash
 pypurge
+```
 
-Preview everything — no deletions
-
+**Preview everything — no deletions:**
+```bash
 pypurge --preview
-
-Clean without prompt (CI-safe)
-
-pypurge --yes
-
-Clean a specific folder
-
-pypurge myproject/
-
-Exclude files or directories
-
-pypurge --exclude "*.log" --exclude "re:.*tmp.*"
-
-Force deletion of stubborn files
-
-pypurge --force
-
-Run in non-interactive (quiet) mode
-
-pypurge --quiet
-
-Backup before deleting 🛟
-
-pypurge --backup
-
-Clean virtual environments too
-
-pypurge --clean-venv
-
-Delete only files older than 7 days
-
-pypurge --older-than 7
-
-Allow root / system scans (⚠️ expert mode)
-
-pypurge --allow-root --allow-broad-root
-
+```
 
 ---
 
-✨ Example Output
+## ✨ Key Features
 
-=== Preview: grouped cleanup summary for .
-Group                         Items   Size        Paths (truncated)
-----------------------------------------------------------------------
-Python Caches                 84      12.4MB
-Testing/Linting/...           36      4.2MB
-Build/Packaging               12      2.1MB
-
-📁 Python Caches — 84 items, 12.4MB
-  src/app/__pycache__/       — 340KB
-  tests/__pycache__/         — 290KB
-  ...
-... and 60 more
-
+*   **🛡️ Safety-first Design**: Prevents accidental root-level deletion and protects system directories.
+*   **🎯 Targeted Cleanup**: Smartly handles `__pycache__`, `.pytest_cache`, `build/`, `dist/`, `.egg-info`, and more.
+*   **🧠 Smart Preview**: Shows detailed counts, groups, and disk usage before you confirm deletion.
+*   **🪄 Configuration Wizard**: Easily setup exclusions with `pypurge --init`.
+*   **📦 Atomic Backups**: Create a zip backup with SHA256 manifest before cleaning (`--backup`).
+*   **🪪 Concurrency Safety**: Stale lock & lockfile protection to avoid multi-process conflicts.
+*   **🕒 Age-based Filtering**: Delete only items older than N days (`--older-than`).
+*   **🧹 Virtualenv Purge**: Optional cleaning of virtual environments (`--clean-venv`).
+*   **⚙️ Highly Configurable**: Use CLI arguments or `.pypurge.json` for persistent settings.
+*   **🤖 CI/CD Ready**: Supports non-interactive modes (`--yes`, `--quiet`, `--log-format json`).
 
 ---
 
-### ⚙️ Advanced Usage & Configuration
+## ⚙️ Configuration & Advanced Usage
 
 While `pypurge` works great out of the box, you can fine-tune its behavior with command-line arguments or a configuration file.
 
-#### CLI Arguments
+### CLI Arguments
 
-| Argument                  | Short | Description                                                              | Default                  |
-| ------------------------- | ----- | ------------------------------------------------------------------------ | ------------------------ |
-| `root...`                 |       | Directories to clean.                                                    | `.` (current directory)  |
-| `--preview`               | `-p`  | Preview targets without deleting anything.                               | `False`                  |
-| `--yes`                   | `-y`  | Skip the interactive confirmation prompt.                                | `False`                  |
-| `--quiet`                 | `-q`  | Suppress all output except for critical errors.                          | `False`                  |
-| `--clean-venv`            |       | Include virtual environment directories (`.venv`, `venv`, etc.) in the scan. | `False`                  |
-| `--exclude <pattern>`     |       | Exclude files/directories matching a glob or `re:` pattern.              | (none)                   |
-| `--older-than <days>`     |       | Only target files older than `N` days.                                   | `0` (all ages)           |
-| `--age-type <type>`       |       | Choose age metric: `mtime` (modified), `atime` (accessed), `ctime` (created). | `mtime`                  |
-| `--force`                 |       | Attempt to `chmod` files to ensure deletion.                             | `False`                  |
-| `--backup`                |       | Create a `.zip` backup of all targets before deletion.                   | `False`                  |
-| `--backup-dir <path>`     |       | Specify a directory to store backups.                                    | (root of scan)           |
-| `--backup-name <name>`    |       | Set a reproducible base name for backup archives.                        | (auto-generated)         |
-| `--delete-symlinks`       |       | Also delete symbolic links (the link itself, not the target).            | `False`                  |
-| `--config <path>`         |       | Path to a `.pypurge.json` configuration file.                            | (auto-detect in root)    |
-| `--allow-broad-root`      |       | **DANGEROUS**: Allow running in broad directories like `/` or `$HOME`.     | `False`                  |
-| `--allow-root`            |       | **DANGEROUS**: Allow running as the `root` user.                         | `False`                  |
-| `--lockfile <name>`       |       | Name of the lockfile to prevent concurrent runs.                         | `.pypurge.lock`          |
-| `--lock-stale-seconds <N>`|       | Time in seconds before a lock is considered stale.                       | `86400` (24 hours)       |
-| `--log-file <path>`       |       | Path to a file for logging output.                                       | (none)                   |
-| `--log-format <format>`   |       | Log format: `text` or `json`.                                            | `text`                   |
-| `--no-color`              |       | Disable colored terminal output.                                         | `False`                  |
-| `--version`               | `-v`  | Show the application version and exit.                                   | `False`                  |
+| Argument | Short | Description | Default |
+| :--- | :--- | :--- | :--- |
+| `root...` | | Directories to clean. | `.` (current directory) |
+| `--preview` | `-p` | Preview targets without deleting anything. | `False` |
+| `--yes` | `-y` | Skip the interactive confirmation prompt. | `False` |
+| `--quiet` | `-q` | Suppress all output except for critical errors. | `False` |
+| `--clean-venv` | | Include virtual environment folders (`.venv`, `venv`) in the scan. | `False` |
+| `--exclude <pattern>` | | Exclude files/directories matching a glob or `re:` pattern. | (none) |
+| `--older-than <days>` | | Only target files older than `N` days. | `0` (all ages) |
+| `--age-type <type>` | | Age metric: `mtime` (modified), `atime` (accessed), `ctime` (created). | `mtime` |
+| `--force` | | Attempt to `chmod` files to ensure deletion. | `False` |
+| `--backup` | | Create a `.zip` backup of all targets before deletion. | `False` |
+| `--backup-dir <path>` | | Specify a directory to store backups. | (root of scan) |
+| `--backup-name <name>` | | Set a reproducible base name for backup archives. | (auto-generated) |
+| `--delete-symlinks` | | Also delete symbolic links (the link itself, not the target). | `False` |
+| `--config <path>` | | Path to a `.pypurge.json` configuration file. | (auto-detect) |
+| `--allow-broad-root` | | **DANGEROUS**: Allow running in broad directories like `/` or `$HOME`. | `False` |
+| `--allow-root` | | **DANGEROUS**: Allow running as the `root` user. | `False` |
+| `--lockfile <name>` | | Name of the lockfile to prevent concurrent runs. | `.pypurge.lock` |
+| `--lock-stale-seconds <N>` | | Time in seconds before a lock is considered stale. | `86400` (24h) |
+| `--log-file <path>` | | Path to a file for logging output. | (none) |
+| `--log-format <format>` | | Log format: `text` or `json`. | `text` |
+| `--no-rotate-log` | | Disable log file rotation. | `False` |
+| `--interactive` | | Force interactive pretty output (colors). | `False` |
+| `--version` | `-v` | Show the application version and exit. | `False` |
+| `--init` | | Run the configuration wizard. | `False` |
 
-#### Configuration File
+### Configuration File (`.pypurge.json`)
 
-You can create a `.pypurge.json` file in the root of your project to define custom patterns and exclusions:
+You can create a `.pypurge.json` file in the root of your project to define custom patterns and exclusions. Use `pypurge --init` to generate one.
 
 ```json
 {
@@ -190,57 +131,38 @@ You can create a `.pypurge.json` file in the root of your project to define cust
 
 ---
 
-🔒 Safety Rules
-
-By default pypurge REFUSES to run in:
-
-/
-
-$HOME
-
-/usr, /etc, /bin, /sbin
-
-
-Unless you explicitly pass:
-
---allow-broad-root
-
-Running as root also requires:
-
---allow-root
-
-
----
-
-### 🏗️ Architecture
+## 🏗️ Architecture
 
 The project follows a modular structure to separate concerns:
 
 ```
 src/pypurge/
-├── cli.py          # Main entry point, argument parsing
+├── cli.py             # Main entry point, argument parsing
 └── modules/
-    ├── backup.py   # Atomic backup logic
-    ├── deletion.py # Safe file/directory removal
-    ├── locking.py  # Cross-process lock management
-    ├── logging.py  # Logging setup
-    ├── safety.py   # Guards against dangerous operations
-    ├── scan.py     # Core target scanning logic
-    ├── ui.py       # Rich terminal output
-    └── utils.py    # Helper functions
+    ├── backup.py      # Atomic backup logic
+    ├── config_wizard.py # Interactive configuration generator
+    ├── deletion.py    # Safe file/directory removal
+    ├── locking.py     # Cross-process lock management
+    ├── logging.py     # Logging setup
+    ├── safety.py      # Guards against dangerous operations
+    ├── scan.py        # Core target scanning logic
+    ├── ui.py          # Rich terminal output
+    └── utils.py       # Helper functions
 ```
 
-The core logic flow is:
-1.  **Parse Arguments**: `cli.py` handles user input.
-2.  **Acquire Lock**: `locking.py` prevents concurrent runs in the same directory.
-3.  **Scan for Targets**: `scan.py` identifies files and directories to be deleted based on predefined and custom patterns.
-4.  **Confirm & Backup**: The user is prompted to confirm, and an optional backup is created using `backup.py`.
-5.  **Delete**: `deletion.py` removes the targets.
-6.  **Release Lock**: The lock is released.
+**Core Logic Flow:**
+1.  **Parse Arguments**: `cli.py` handles user input and configuration.
+2.  **Safety Checks**: `safety.py` ensures we aren't running in a dangerous context (e.g., root directory).
+3.  **Acquire Lock**: `locking.py` prevents concurrent runs in the same directory.
+4.  **Scan**: `scan.py` identifies files and directories to be deleted based on predefined and custom patterns.
+5.  **Confirm**: The user is presented with a `rich` preview (via `ui.py`) and prompted to proceed.
+6.  **Backup (Optional)**: `backup.py` creates an atomic archive of targets.
+7.  **Delete**: `deletion.py` removes the targets.
+8.  **Release Lock**: The lock is released.
 
 ---
 
-### 🗺️ Roadmap
+## 🗺️ Roadmap
 
 Our vision for `pypurge` is just getting started. We have ambitious plans for new features, integrations, and AI-powered capabilities.
 
@@ -248,39 +170,12 @@ To see the full, detailed plan, please check out our official [**Project Roadmap
 
 ---
 
-🤝 Trusted Publishing & CI
+## 🤝 Contributing
 
-This project uses PyPI Trusted Publishing (OIDC) + GitHub Actions for secure releases.
-
-Push tag to publish:
-
-git tag v0.1.0
-git push origin v0.1.0
-
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) (if available) or simply fork the repository and submit a Pull Request.
 
 ---
 
-🧠 Requirements
-
-Python >= 3.8
-
-- **rich** (for beautiful console output)
-
-
-
----
-
-🪪 License
+## 🪪 License
 
 MIT © Dhruv
-
-
----
-
-⭐ Support the Project
-
-If this tool saved you from rm -rf nightmares…
-Give it a ⭐ on GitHub — it helps a lot!
-
-
----
