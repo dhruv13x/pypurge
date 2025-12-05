@@ -12,7 +12,7 @@ Welcome to the official roadmap for `pypurge`. This document outlines our vision
 - [x] **Safety First**: Implement robust checks to prevent deletion in critical system directories (`/`, `$HOME`, `/usr`, etc.).
 - [x] **Preview Mode**: Add a `--preview` flag to show what will be deleted without actually deleting anything.
 - [x] **Cross-Process Locking**: Implement a `.pypurge.lock` file to prevent concurrent runs in the same directory.
-- [ ] **Configuration Wizard**: An interactive mode (`pypurge --init`) to generate a `.pypurge.json` file. This will guide users through setting up custom rules and exclusions.
+- [x] **Configuration Wizard**: An interactive mode (`pypurge --init`) to generate a `.pypurge.json` file. This will guide users through setting up custom rules and exclusions.
 - [ ] **Enhanced Exclusion Logic**: Improve the `--exclude` logic to support more complex patterns and inline comments in the configuration file.
 
 ---

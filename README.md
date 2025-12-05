@@ -49,6 +49,7 @@ No more `find . -name __pycache__ -delete` or risky scripts — **clean confiden
 - 🎯 **Python-specific cleanup**
   - `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `build/`, `dist/`, etc.
 - 🧠 **Smart preview mode** — shows counts, groups & disk usage before deleting
+- 🪄 **Configuration Wizard** — easily setup exclusions with `pypurge --init`
 - 🪪 **Stale lock & lockfile protection** — avoids multi-process conflicts
 - 🕒 **Age-based filtering** — delete only items older than N days
 - 📦 **Atomic backup mode** — zip backup with SHA256 manifest
