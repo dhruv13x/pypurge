@@ -118,6 +118,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--init", action="store_true", help="Run the configuration wizard."
     )
+    parser.add_argument(
+        "--no-gitignore",
+        action="store_true",
+        help="Do not respect .gitignore files (enabled by default).",
+    )
 
     return parser.parse_args(argv)
 
