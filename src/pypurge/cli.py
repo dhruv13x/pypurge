@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 from .modules.backup import backup_targets_atomic
+from .modules.config_wizard import run_init_wizard
 from .modules.deletion import force_rmtree, force_unlink
 from .modules.locking import acquire_lock, release_lock
 from .modules.logging import setup_logging
@@ -157,6 +158,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "-v", "--version", action="store_true", help="Show version and exit."
     )
+    parser.add_argument(
+        "--init", action="store_true", help="Run the configuration wizard."
+    )
 
     args = parser.parse_args(argv)
     if args.version:
@@ -167,6 +171,9 @@ def main(argv: list[str] | None = None) -> int:
     log_file = Path(args.log_file) if args.log_file else None
     level = logging.INFO
     setup_logging(args.log_format, log_file, level=level, rotate=not args.no_rotate_log)
+
+    if args.init:
+        return run_init_wizard()
 
     # determine whether we should use pretty printing
     use_pretty = (
