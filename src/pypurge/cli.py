@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 from .modules.backup import backup_targets_atomic
+from .modules.config import load_config
 from .modules.config_wizard import run_init_wizard
 from .modules.deletion import force_rmtree, force_unlink
 from .modules.locking import acquire_lock, release_lock
@@ -150,17 +151,12 @@ def main(argv: list[str] | None = None) -> int:
 
         try:
             # load config
-            config = {}
             cfg_path = (
                 Path(args.config) if args.config else root_path / ".pypurge.json"
             )
-            if cfg_path.exists():
-                try:
-                    with open(cfg_path) as f:
-                        config = json.load(f)
-                    logger.info("Loaded config %s", cfg_path)
-                except Exception as e:
-                    logger.warning("Failed to load config %s: %s", cfg_path, e)
+            config = load_config(cfg_path)
+            if config:
+                logger.info("Loaded config %s", cfg_path)
 
             dir_groups = {
                 "Python Caches": ["__pycache__"],
@@ -254,6 +250,7 @@ def main(argv: list[str] | None = None) -> int:
                 older_than_sec,
                 args.age_type,
                 args.delete_symlinks,
+                use_gitignore=not args.no_gitignore,
             )
 
             all_targets = [
