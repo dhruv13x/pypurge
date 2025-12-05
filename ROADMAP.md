@@ -1,58 +1,61 @@
 # 🗺️ Project Roadmap
 
-Welcome to the official roadmap for `pypurge`. This document outlines our vision, from immediate priorities to long-term ambitions. We're building a best-in-class cleanup tool, and this is how we plan to get there.
+Welcome to the **Master Plan** for `pypurge`. This document outlines our trajectory from a solid utility to a legendary, ecosystem-defining tool. We categorize our goals by ambition, stability, and integration depth.
 
 ---
 
-## Phase 1: Foundation (Q1)
-**Focus**: Core functionality, stability, security, and basic usage. These are critical features that are either partially complete or essential for a robust initial release.
+## Phase 1: Foundation (CRITICALLY MUST HAVE) - Q1
+**Focus**: Core functionality, stability, security, and basic usage.
+*Prioritizing items that are partially built or standard for this type of tool.*
 
-- [x] **Core Python Cleanup**: Safely remove `__pycache__`, `.pyc` files, and common cache directories.
-- [x] **Build & Packaging Artifacts**: Clean `build/`, `dist/`, `*.egg-info`, and other packaging-related folders.
-- [x] **Safety First**: Implement robust checks to prevent deletion in critical system directories (`/`, `$HOME`, `/usr`, etc.).
-- [x] **Preview Mode**: Add a `--preview` flag to show what will be deleted without actually deleting anything.
-- [x] **Cross-Process Locking**: Implement a `.pypurge.lock` file to prevent concurrent runs in the same directory.
-- [x] **Configuration Wizard**: An interactive mode (`pypurge --init`) to generate a `.pypurge.json` file. This will guide users through setting up custom rules and exclusions.
-- [ ] **Enhanced Exclusion Logic**: Improve the `--exclude` logic to support more complex patterns and inline comments in the configuration file.
-
----
-
-## Phase 2: The Standard (Q2)
-**Focus**: Achieving feature parity with top competitors, enhancing user experience, and providing robust error handling and reporting.
-
-- [x] **Age-Based Filtering**: Add `--older-than` and `--age-type` flags to delete files based on modification, access, or creation time.
-- [x] **Atomic Backups**: Implement a `--backup` feature that creates a compressed archive of all targets before deletion.
-- [ ] **Plugin System**: Develop a simple plugin architecture allowing users to define custom cleanup modules for project-specific tools (e.g., `django_cleanup`, `flask_cache`).
-- [ ] **More Output Formats**: Add support for `--output-format` to generate reports in `json`, `csv`, or `html`. This is crucial for CI/CD integration and automated analysis.
-- [ ] **Granular Reporting**: Improve the summary table to show more details, such as file counts per subdirectory and highlighting the largest space offenders.
-- [ ] **Shell Completions**: Add support for shell completions (bash, zsh, fish) to improve usability.
+- [x] **Core Python Cleanup**: Safely remove `__pycache__`, `.pyc`, `build/`, `dist/`, and `.egg-info`.
+- [x] **Safety Architecture**: Root directory protection (`/`, `$HOME`) and stale lockfile handling.
+- [x] **Smart Preview**: Detailed dry-run mode (`--preview`) showing exactly what will happen.
+- [x] **Concurrency Control**: robust `.pypurge.lock` implementation to prevent race conditions.
+- [x] **Configuration Wizard**: Interactive `pypurge --init` to generate JSON configs.
+- [x] **Age-Based Filtering**: cleaning based on `mtime`, `atime`, or `ctime` (`--older-than`).
+- [x] **Atomic Backups**: Zip-based backups with manifests before deletion.
+- [x] **CI/CD Readiness**: JSON log formatting (`--log-format json`) and non-interactive modes (`--yes`).
+- [ ] **.gitignore Awareness**: Respect `.gitignore` files to avoid cleaning untracked but necessary files (Gap Analysis).
+- [ ] **Advanced Config Validation**: Strict schema validation for `.pypurge.json` to prevent runtime errors.
 
 ---
 
-## Phase 3: The Ecosystem (Q3 - Q4)
-**Focus**: Integrations, extensibility, and making `pypurge` a valuable component in a larger development toolchain.
+## Phase 2: The Standard (MUST HAVE) - Q2
+**Focus**: Feature parity with top competitors, user experience improvements, and robust reporting.
 
-- [ ] **IDE Integration**: Develop plugins for popular editors like VS Code and PyCharm to run `pypurge` directly from the IDE.
-- [ ] **Pre-commit Hook**: Create a `pre-commit` hook that can run `pypurge` in a specific mode before a commit is made.
-- [ ] **GitHub Actions Integration**: Publish a dedicated GitHub Action to make running `pypurge` in CI/CD pipelines seamless.
-- [ ] **Webhooks**: Add support for sending a webhook notification (e.g., to Slack or Discord) after a cleanup job is completed, summarizing the results.
-- [ ] **SDK/Library Mode**: Refactor the core logic so `pypurge` can be used as a Python library, allowing other tools to import and use its scanning and deletion capabilities.
-
----
-
-## Phase 4: The Vision (GOD LEVEL)
-**Focus**: Ambitious, "futuristic" features that could redefine what a project cleaning tool can do.
-
-- [ ] **AI-Powered Pattern Detection**: Use machine learning to analyze a project's structure and dependencies, automatically suggesting custom cleanup rules that go beyond the standard patterns.
-- [ ] **Heuristic-Based Cleaning**: Instead of just relying on patterns, analyze file contents and metadata to identify auto-generated or redundant files (e.g., compiled assets that are no longer referenced in the source code).
-- [ ] **Cross-Language Support**: Extend the plugin system to support cleaning artifacts from other languages commonly found in Python projects (e.g., `node_modules` for frontend code, compiled binaries for Rust extensions).
-- [ ] **"Time Machine" Mode**: Integrate with Git to identify files that were generated by a build process but were never checked into version control, allowing for a "smart" cleanup that preserves important artifacts.
+- [ ] **Shell Completions**: Native auto-completion for `bash`, `zsh`, and `fish` to speed up CLI usage.
+- [ ] **Structured Reporting**: Generate audit reports in **HTML** and **CSV** formats for compliance and analysis.
+- [ ] **Interactive TUI Dashboard**: Upgrade the confirmation prompt to a rich, interactive Terminal User Interface (using `Textual` or `Rich`) allowing users to toggle specific files before confirming.
+- [ ] **Plugin Architecture**: A lightweight system for loading external cleanup modules (e.g., `pypurge-django`).
+- [ ] **"Undo" Capability**: A dedicated `pypurge --restore <backup_id>` command to easily apply atomic backups.
 
 ---
 
-## The Sandbox (Experimental / Optional)
-**Focus**: Creative, out-of-the-box ideas that might be fun to explore.
+## Phase 3: The Ecosystem (INTEGRATION & SHOULD HAVE) - Q3
+**Focus**: Webhooks, API exposure, 3rd party plugins, SDK generation, and extensibility.
 
-- [ ] **Gamification**: Add a "score" based on how much disk space is saved, with achievements for regular cleaning.
-- [ ] **Visual Flame Graph**: Generate a visual flame graph of disk space usage to help users quickly identify the biggest sources of clutter.
-- [ ] **"Tidy" Mode**: A mode that not only deletes files but also organizes them into a `.archive` directory based on their type and age.
+- [ ] **Pre-commit Hook**: Official support for `pre-commit` to sanitize repos before pushing.
+- [ ] **Modern Tooling Integrations**: Specialized cleaning for `poetry` (cache), `uv` (venvs), and `hatch` environments.
+- [ ] **SDK / Library Mode**: Decouple the CLI from the core logic, exposing a stable Python API (`import pypurge`) for other tools to build upon.
+- [ ] **IDE Extensions**: VS Code and PyCharm extensions to "Right Click -> Purge" specific folders.
+- [ ] **Webhooks & Notifications**: Send a payload to Slack/Discord/Teams summarizing the cleanup results (Space saved, file count).
+
+---
+
+## Phase 4: The Vision (GOD LEVEL) - Q4+
+**Focus**: "Futuristic" features, AI integration, advanced automation, and industry-disrupting capabilities.
+
+- [ ] **AI-Powered "Junk" Detection**: Train a lightweight model to identify redundant or "dead" files that don't match standard patterns but haven't been touched in years.
+- [ ] **The "Time Machine"**: Deep integration with Git to identify build artifacts that *should* be ignored but aren't, comparing filesystem state vs. git index history.
+- [ ] **Polyglot Cleaning**: Extend beyond Python to intelligently clean hybrid projects (e.g., `node_modules` in a Django React app, `target/` in Rust extensions).
+- [ ] **Cloud Sync Configuration**: Sync your preferred cleanup rules and "Safe Lists" across your entire engineering team via a remote config URL.
+
+---
+
+## The Sandbox (OUT OF THE BOX / OPTIONAL)
+**Focus**: Wild, creative, experimental ideas that set the project apart.
+
+- [ ] **"The Vacuum" Daemon**: A background service that watches directories and auto-cleans them based on rules (Risky, but powerful).
+- [ ] **Disk Usage Flame Graph**: A visual CLI flame graph to show exactly where the space is going before you delete it.
+- [ ] **Gamification**: "Space Ranger" badges and leaderboards for bytes reclaimed.
