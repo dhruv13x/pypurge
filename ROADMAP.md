@@ -16,7 +16,7 @@ Welcome to the **Master Plan** for `pypurge`. This document outlines our traject
 - [x] **Age-Based Filtering**: cleaning based on `mtime`, `atime`, or `ctime` (`--older-than`).
 - [x] **Atomic Backups**: Zip-based backups with manifests before deletion.
 - [x] **CI/CD Readiness**: JSON log formatting (`--log-format json`) and non-interactive modes (`--yes`).
-- [ ] **.gitignore Awareness**: Respect `.gitignore` files to avoid cleaning untracked but necessary files (Gap Analysis).
+- [x] **.gitignore Awareness**: Respect `.gitignore` files to avoid cleaning untracked but necessary files (Gap Analysis).
 - [ ] **Advanced Config Validation**: Strict schema validation for `.pypurge.json` to prevent runtime errors.
 
 ---

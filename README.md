@@ -77,6 +77,7 @@ pypurge --preview
 *   **🧹 Virtualenv Purge**: Optional cleaning of virtual environments (`--clean-venv`).
 *   **⚙️ Highly Configurable**: Use CLI arguments or `.pypurge.json` for persistent settings.
 *   **🤖 CI/CD Ready**: Supports non-interactive modes (`--yes`, `--quiet`, `--log-format json`).
+*   **🛡️ Gitignore Awareness**: Respects `.gitignore` rules (including nested ones) to avoid cleaning untracked files (`--no-gitignore` to disable).
 
 ---
 
