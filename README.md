@@ -78,12 +78,35 @@ pypurge --preview
 *   **⚙️ Highly Configurable**: Use CLI arguments or `.pypurge.json` for persistent settings.
 *   **🤖 CI/CD Ready**: Supports non-interactive modes (`--yes`, `--quiet`, `--log-format json`).
 *   **🛡️ Gitignore Awareness**: Respects `.gitignore` rules (including nested ones) to avoid cleaning untracked files (`--no-gitignore` to disable).
+*   **🐚 Shell Completions**: Native auto-completion for `bash`, `zsh`, and `fish` to speed up CLI usage.
 
 ---
 
 ## ⚙️ Configuration & Advanced Usage
 
 While `pypurge` works great out of the box, you can fine-tune its behavior with command-line arguments or a configuration file.
+
+### Shell Completions
+
+You can generate shell completion scripts to make using `pypurge` even easier.
+
+**Bash:**
+```bash
+pypurge --completions bash > /etc/bash_completion.d/pypurge
+# or source directly
+source <(pypurge --completions bash)
+```
+
+**Zsh:**
+```bash
+pypurge --completions zsh > ~/.zfunc/_pypurge
+# Ensure ~/.zfunc is in your fpath
+```
+
+**Fish:**
+```bash
+pypurge --completions fish > ~/.config/fish/completions/pypurge.fish
+```
 
 ### CLI Arguments
 
@@ -113,10 +136,14 @@ While `pypurge` works great out of the box, you can fine-tune its behavior with 
 | `--interactive` | | Force interactive pretty output (colors). | `False` |
 | `--version` | `-v` | Show the application version and exit. | `False` |
 | `--init` | | Run the configuration wizard. | `False` |
+| `--completions` | | Generate shell completion script (`bash`, `zsh`, `fish`). | (none) |
 
 ### Configuration File (`.pypurge.json`)
 
 You can create a `.pypurge.json` file in the root of your project to define custom patterns and exclusions. Use `pypurge --init` to generate one.
+
+**Advanced Validation:**
+The configuration file is validated against a strict schema. `exclude_patterns` supports regex patterns prefixed with `re:`. These are compiled and validated at runtime to prevent invalid regex errors.
 
 ```json
 {

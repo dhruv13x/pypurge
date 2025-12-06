@@ -11,9 +11,9 @@ except metadata.PackageNotFoundError:
 # Defaults
 DEFAULT_LOCK_TTL = 24 * 3600  # 24 hours stale lock threshold
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+def get_parser() -> argparse.ArgumentParser:
     """
-    Parses command-line arguments.
+    Creates and returns the argument parser.
     """
     parser = argparse.ArgumentParser(
         prog="pypurge", description="Production-grade Python cleanup tool"
@@ -123,7 +123,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Do not respect .gitignore files (enabled by default).",
     )
+    parser.add_argument(
+        "--completions",
+        choices=["bash", "zsh", "fish"],
+        help="Generate shell completion script.",
+    )
+    return parser
 
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """
+    Parses command-line arguments.
+    """
+    parser = get_parser()
     return parser.parse_args(argv)
 
 def get_version() -> str:

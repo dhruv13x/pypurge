@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +49,18 @@ def validate_config(config: dict[str, Any]) -> None:
         validate(instance=config, schema=CONFIG_SCHEMA)
     except ValidationError as e:
         raise ConfigValidationError(f"Configuration error: {e.message}") from e
+
+    # Advanced Validation
+    exclude_patterns = config.get("exclude_patterns", [])
+    for pattern in exclude_patterns:
+        if pattern.startswith("re:"):
+            regex_str = pattern[3:]
+            try:
+                re.compile(regex_str)
+            except re.error as e:
+                raise ConfigValidationError(
+                    f"Invalid regex pattern '{pattern}': {e}"
+                )
 
 def load_config(config_path: Path) -> dict[str, Any]:
     """
