@@ -1,6 +1,6 @@
 import json
 import pytest
-from pypurge.modules.config import validate_config
+from pypurge.modules.config import validate_config, ConfigValidationError
 
 def test_validate_config_valid(fs):
     """Test valid configuration passes validation."""
@@ -18,13 +18,15 @@ def test_validate_config_invalid_type(fs):
     invalid_config = {
         "dir_groups": ["should be dict"],
     }
-    with pytest.raises(Exception): # We'll refine this to ValidationError later
+    with pytest.raises(ConfigValidationError) as excinfo:
         validate_config(invalid_config)
+    assert "Configuration error" in str(excinfo.value)
 
 def test_validate_config_invalid_structure(fs):
     """Test invalid structure (values not lists of strings)."""
     invalid_config = {
         "dir_groups": {"Custom": "should be list"},
     }
-    with pytest.raises(Exception):
+    with pytest.raises(ConfigValidationError) as excinfo:
         validate_config(invalid_config)
+    assert "Configuration error" in str(excinfo.value)
