@@ -34,7 +34,8 @@ from .modules.ui import (
     print_warning,
 )
 from .modules.utils import format_bytes, get_size
-from .modules.args import parse_args, get_version
+from .modules.args import parse_args, get_version, get_parser
+from .modules.completions import generate_completion_script
 from .banner import print_logo
 
 
@@ -53,8 +54,16 @@ logger = logging.getLogger(__name__)
 
 
 def main(argv: list[str] | None = None) -> int:
-    print_logo()
     args = parse_args(argv)
+
+    if args.completions:
+        parser = get_parser()
+        script = generate_completion_script(args.completions, parser)
+        print(script)
+        return EXIT_OK
+
+    print_logo()
+
     if args.version:
         print(get_version())
         return EXIT_OK

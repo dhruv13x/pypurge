@@ -17,14 +17,14 @@ Welcome to the **Master Plan** for `pypurge`. This document outlines our traject
 - [x] **Atomic Backups**: Zip-based backups with manifests before deletion.
 - [x] **CI/CD Readiness**: JSON log formatting (`--log-format json`) and non-interactive modes (`--yes`).
 - [x] **.gitignore Awareness**: Respect `.gitignore` files to avoid cleaning untracked but necessary files (Gap Analysis).
-- [ ] **Advanced Config Validation**: Strict schema validation for `.pypurge.json` to prevent runtime errors.
+- [x] **Advanced Config Validation**: Strict schema validation for `.pypurge.json` to prevent runtime errors.
 
 ---
 
 ## Phase 2: The Standard (MUST HAVE) - Q2
 **Focus**: Feature parity with top competitors, user experience improvements, and robust reporting.
 
-- [ ] **Shell Completions**: Native auto-completion for `bash`, `zsh`, and `fish` to speed up CLI usage.
+- [x] **Shell Completions**: Native auto-completion for `bash`, `zsh`, and `fish` to speed up CLI usage.
 - [ ] **Structured Reporting**: Generate audit reports in **HTML** and **CSV** formats for compliance and analysis.
 - [ ] **Interactive TUI Dashboard**: Upgrade the confirmation prompt to a rich, interactive Terminal User Interface (using `Textual` or `Rich`) allowing users to toggle specific files before confirming.
 - [ ] **Plugin Architecture**: A lightweight system for loading external cleanup modules (e.g., `pypurge-django`).
