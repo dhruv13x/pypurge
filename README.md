@@ -43,7 +43,7 @@ No more `find . -name __pycache__ -delete` or risky scripts — **clean confiden
 
 ### Prerequisites
 *   Python 3.8+
-*   `rich` (installed automatically)
+*   `rich` (UI), `pathspec` (Gitignore), `jsonschema` (Validation) — *installed automatically*
 
 ### Installation
 
@@ -124,6 +124,7 @@ pypurge --completions fish > ~/.config/fish/completions/pypurge.fish
 | `--backup` | | Create a `.zip` backup of all targets before deletion. | `False` |
 | `--backup-dir <path>` | | Specify a directory to store backups. | (root of scan) |
 | `--backup-name <name>` | | Set a reproducible base name for backup archives. | (auto-generated) |
+| `--no-color` | | Disable colored output. | `False` |
 | `--delete-symlinks` | | Also delete symbolic links (the link itself, not the target). | `False` |
 | `--config <path>` | | Path to a `.pypurge.json` configuration file. | (auto-detect) |
 | `--allow-broad-root` | | **DANGEROUS**: Allow running in broad directories like `/` or `$HOME`. | `False` |
@@ -136,6 +137,7 @@ pypurge --completions fish > ~/.config/fish/completions/pypurge.fish
 | `--interactive` | | Force interactive pretty output (colors). | `False` |
 | `--version` | `-v` | Show the application version and exit. | `False` |
 | `--init` | | Run the configuration wizard. | `False` |
+| `--no-gitignore` | | Do not respect .gitignore files (enabled by default). | `False` |
 | `--completions` | | Generate shell completion script (`bash`, `zsh`, `fish`). | (none) |
 
 ### Configuration File (`.pypurge.json`)
@@ -147,6 +149,7 @@ The configuration file is validated against a strict schema. `exclude_patterns` 
 
 ```json
 {
+  "exclude_dirs": [".git", "node_modules"],
   "exclude_patterns": ["re:.*migrations.*", "data/"],
   "dir_groups": {
     "CustomData": ["temp_run/", "scratch/"]
@@ -167,7 +170,10 @@ The project follows a modular structure to separate concerns:
 src/pypurge/
 ├── cli.py             # Main entry point, argument parsing
 └── modules/
+    ├── args.py        # Argument parsing logic
     ├── backup.py      # Atomic backup logic
+    ├── completions.py # Shell completion scripts
+    ├── config.py      # Configuration schema and validation
     ├── config_wizard.py # Interactive configuration generator
     ├── deletion.py    # Safe file/directory removal
     ├── locking.py     # Cross-process lock management
