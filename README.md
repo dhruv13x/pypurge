@@ -4,46 +4,39 @@
 
 <div align="center">
 
-<!-- Package Info -->
+# pypurge
+
+**Safe & Powerful Python Project Cleaner**
+
 [![PyPI version](https://img.shields.io/pypi/v/pypurge.svg)](https://pypi.org/project/pypurge/)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 ![Wheel](https://img.shields.io/pypi/wheel/pypurge.svg)
 [![Release](https://img.shields.io/badge/release-PyPI-blue)](https://pypi.org/project/pypurge/)
-
-<!-- Build & Quality -->
 [![Build status](https://github.com/dhruv13x/pypurge/actions/workflows/publish.yml/badge.svg)](https://github.com/dhruv13x/pypurge/actions/workflows/publish.yml)
 [![Codecov](https://codecov.io/gh/dhruv13x/pypurge/graph/badge.svg)](https://codecov.io/gh/dhruv13x/pypurge)
 [![Test Coverage](https://img.shields.io/badge/coverage-90%25%2B-brightgreen.svg)](https://github.com/dhruv13x/pypurge/actions/workflows/test.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/badge/linting-ruff-yellow.svg)](https://github.com/astral-sh/ruff)
 ![Security](https://img.shields.io/badge/security-CodeQL-blue.svg)
-
-<!-- Usage -->
 ![Downloads](https://img.shields.io/pypi/dm/pypurge.svg)
 ![OS](https://img.shields.io/badge/os-Linux%20%7C%20macOS%20%7C%20Windows-blue.svg)
-[![Python Versions](https://img.shields.io/pypi/pyversions/pypurge.svg)](https://pypi.org/project/pypurge/)
-
-<!-- License -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
 
 ---
 
-# 🧹 pypurge — Safe & Powerful Python Project Cleaner
+**pypurge** is a production-grade Python cleanup utility designed to safely remove auto-generated files, caches, virtualenv leftovers, test artifacts, and temporary files — **without putting your system at risk.**
 
-**pypurge** is a production-grade Python cleanup utility designed to safely remove auto-generated files, caches, virtualenv leftovers, test artifacts, temporary files, and clutter — **without putting your system at risk.**
-
-Think of it as a **precision broom for Python projects**.  
-No more `find . -name __pycache__ -delete` or risky scripts — **clean confidently, with safety rails.**
+Think of it as a **precision broom for Python projects**. No more `find . -name __pycache__ -delete` or risky scripts.
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Quick Start (The "5-Minute Rule")
 
 ### Prerequisites
 *   Python 3.8+
-*   `rich` (UI), `pathspec` (Gitignore), `jsonschema` (Validation) — *installed automatically*
+*   No other external dependencies required.
 
 ### Installation
 
@@ -51,101 +44,71 @@ No more `find . -name __pycache__ -delete` or risky scripts — **clean confiden
 pip install pypurge
 ```
 
-### Usage
+### Run
 
-**Clean current project interactively:**
+Clean your current project interactively:
+
 ```bash
 pypurge
 ```
 
-**Preview everything — no deletions:**
+### Demo
+
 ```bash
+# Preview what would be deleted without touching anything
 pypurge --preview
+
+# Clean everything, including virtual environments, older than 7 days
+pypurge --clean-venv --older-than 7
 ```
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-*   **🛡️ Safety-first Design**: Prevents accidental root-level deletion and protects system directories.
-*   **🎯 Targeted Cleanup**: Smartly handles `__pycache__`, `.pytest_cache`, `build/`, `dist/`, `.egg-info`, and more.
-*   **🧠 Smart Preview**: Shows detailed counts, groups, and disk usage before you confirm deletion.
-*   **🪄 Configuration Wizard**: Easily setup exclusions with `pypurge --init`.
-*   **📦 Atomic Backups**: Create a zip backup with SHA256 manifest before cleaning (`--backup`).
-*   **🪪 Concurrency Safety**: Stale lock & lockfile protection to avoid multi-process conflicts.
-*   **🕒 Age-based Filtering**: Delete only items older than N days (`--older-than`).
-*   **🧹 Virtualenv Purge**: Optional cleaning of virtual environments (`--clean-venv`).
-*   **⚙️ Highly Configurable**: Use CLI arguments or `.pypurge.json` for persistent settings.
-*   **🤖 CI/CD Ready**: Supports non-interactive modes (`--yes`, `--quiet`, `--log-format json`).
-*   **🛡️ Gitignore Awareness**: Respects `.gitignore` rules (including nested ones) to avoid cleaning untracked files (`--no-gitignore` to disable).
-*   **🐚 Shell Completions**: Native auto-completion for `bash`, `zsh`, and `fish` to speed up CLI usage.
+### Core
+*   **Targeted Cleanup**: Smartly handles `__pycache__`, `.pytest_cache`, `build/`, `dist/`, `.egg-info`, and more.
+*   **Virtualenv Purge**: Optional cleaning of virtual environments (`--clean-venv`).
+*   **Smart Preview**: Shows detailed counts, groups, and disk usage before you confirm deletion.
+*   **Shell Completions**: Native auto-completion for `bash`, `zsh`, and `fish`.
+
+### Performance & Safety
+*   **🛡️ Safety-first Design**: Prevents accidental root-level deletion (`/`, `~`) and protects system directories.
+*   **Atomic Backups**: Create a zip backup with SHA256 manifest before cleaning (`--backup`).
+*   **Concurrency Safety**: Stale lock & lockfile protection to avoid multi-process conflicts.
+*   **Gitignore Awareness**: Respects `.gitignore` rules to avoid cleaning untracked files (`--no-gitignore` to disable).
+
+### Advanced
+*   **Age-based Filtering**: Delete only items older than N days (`--older-than`).
+*   **Configuration Wizard**: Easily setup exclusions with `pypurge --init`.
+*   **CI/CD Ready**: Supports non-interactive modes (`--yes`, `--quiet`, `--log-format json`).
 
 ---
 
-## ⚙️ Configuration & Advanced Usage
+## 🛠️ Configuration
 
-While `pypurge` works great out of the box, you can fine-tune its behavior with command-line arguments or a configuration file.
-
-### Shell Completions
-
-You can generate shell completion scripts to make using `pypurge` even easier.
-
-**Bash:**
-```bash
-pypurge --completions bash > /etc/bash_completion.d/pypurge
-# or source directly
-source <(pypurge --completions bash)
-```
-
-**Zsh:**
-```bash
-pypurge --completions zsh > ~/.zfunc/_pypurge
-# Ensure ~/.zfunc is in your fpath
-```
-
-**Fish:**
-```bash
-pypurge --completions fish > ~/.config/fish/completions/pypurge.fish
-```
+You can configure `pypurge` using CLI arguments or a `.pypurge.json` file.
 
 ### CLI Arguments
 
-| Argument | Short | Description | Default |
-| :--- | :--- | :--- | :--- |
-| `root...` | | Directories to clean. | `.` (current directory) |
-| `--preview` | `-p` | Preview targets without deleting anything. | `False` |
-| `--yes` | `-y` | Skip the interactive confirmation prompt. | `False` |
-| `--quiet` | `-q` | Suppress all output except for critical errors. | `False` |
-| `--clean-venv` | | Include virtual environment folders (`.venv`, `venv`) in the scan. | `False` |
-| `--exclude <pattern>` | | Exclude files/directories matching a glob or `re:` pattern. | (none) |
-| `--older-than <days>` | | Only target files older than `N` days. | `0` (all ages) |
-| `--age-type <type>` | | Age metric: `mtime` (modified), `atime` (accessed), `ctime` (created). | `mtime` |
-| `--force` | | Attempt to `chmod` files to ensure deletion. | `False` |
-| `--backup` | | Create a `.zip` backup of all targets before deletion. | `False` |
-| `--backup-dir <path>` | | Specify a directory to store backups. | (root of scan) |
-| `--backup-name <name>` | | Set a reproducible base name for backup archives. | (auto-generated) |
-| `--no-color` | | Disable colored output. | `False` |
-| `--delete-symlinks` | | Also delete symbolic links (the link itself, not the target). | `False` |
-| `--config <path>` | | Path to a `.pypurge.json` configuration file. | (auto-detect) |
-| `--allow-broad-root` | | **DANGEROUS**: Allow running in broad directories like `/` or `$HOME`. | `False` |
-| `--allow-root` | | **DANGEROUS**: Allow running as the `root` user. | `False` |
-| `--lockfile <name>` | | Name of the lockfile to prevent concurrent runs. | `.pypurge.lock` |
-| `--lock-stale-seconds <N>` | | Time in seconds before a lock is considered stale. | `86400` (24h) |
-| `--log-file <path>` | | Path to a file for logging output. | (none) |
-| `--log-format <format>` | | Log format: `text` or `json`. | `text` |
-| `--no-rotate-log` | | Disable log file rotation. | `False` |
-| `--interactive` | | Force interactive pretty output (colors). | `False` |
-| `--version` | `-v` | Show the application version and exit. | `False` |
-| `--init` | | Run the configuration wizard. | `False` |
-| `--no-gitignore` | | Do not respect .gitignore files (enabled by default). | `False` |
-| `--completions` | | Generate shell completion script (`bash`, `zsh`, `fish`). | (none) |
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `root...` | Directories to clean. | `.` |
+| `-p`, `--preview` | Preview targets without deleting. | `False` |
+| `-y`, `--yes` | Skip interactive confirmation. | `False` |
+| `-q`, `--quiet` | Suppress output except errors. | `False` |
+| `--clean-venv` | Include `.venv`, `venv` folders. | `False` |
+| `--exclude <pattern>` | Exclude glob or regex (`re:...`). | None |
+| `--older-than <days>` | Only target items older than N days. | `0` |
+| `--force` | Force deletion (chmod if needed). | `False` |
+| `--backup` | Create a `.zip` backup before delete. | `False` |
+| `--config <path>` | Path to `.pypurge.json`. | Auto-detect |
+| `--init` | Run configuration wizard. | `False` |
+| `--completions <shell>` | Generate shell completions. | None |
 
 ### Configuration File (`.pypurge.json`)
 
-You can create a `.pypurge.json` file in the root of your project to define custom patterns and exclusions. Use `pypurge --init` to generate one.
-
-**Advanced Validation:**
-The configuration file is validated against a strict schema. `exclude_patterns` supports regex patterns prefixed with `re:`. These are compiled and validated at runtime to prevent invalid regex errors.
+Create a `.pypurge.json` file in your project root for persistent settings.
 
 ```json
 {
@@ -153,9 +116,6 @@ The configuration file is validated against a strict schema. `exclude_patterns` 
   "exclude_patterns": ["re:.*migrations.*", "data/"],
   "dir_groups": {
     "CustomData": ["temp_run/", "scratch/"]
-  },
-  "file_groups": {
-    "Logs": ["*.log"]
   }
 }
 ```
@@ -164,52 +124,67 @@ The configuration file is validated against a strict schema. `exclude_patterns` 
 
 ## 🏗️ Architecture
 
-The project follows a modular structure to separate concerns:
+`pypurge` follows a modular architecture for safety and maintainability.
 
-```
+```text
 src/pypurge/
-├── cli.py             # Main entry point, argument parsing
+├── cli.py             # Entry point
 └── modules/
-    ├── args.py        # Argument parsing logic
-    ├── backup.py      # Atomic backup logic
-    ├── completions.py # Shell completion scripts
-    ├── config.py      # Configuration schema and validation
-    ├── config_wizard.py # Interactive configuration generator
-    ├── deletion.py    # Safe file/directory removal
-    ├── locking.py     # Cross-process lock management
-    ├── logging.py     # Logging setup
-    ├── safety.py      # Guards against dangerous operations
-    ├── scan.py        # Core target scanning logic
-    ├── ui.py          # Rich terminal output
-    └── utils.py       # Helper functions
+    ├── safety.py      # Root/System protection logic
+    ├── scan.py        # File scanning & pattern matching
+    ├── deletion.py    # Safe removal operations
+    ├── locking.py     # Process locking mechanism
+    ├── backup.py      # Atomic backup creation
+    ├── config.py      # JSON schema validation
+    └── ui.py          # Rich terminal output
 ```
 
-**Core Logic Flow:**
-1.  **Parse Arguments**: `cli.py` handles user input and configuration.
-2.  **Safety Checks**: `safety.py` ensures we aren't running in a dangerous context (e.g., root directory).
-3.  **Acquire Lock**: `locking.py` prevents concurrent runs in the same directory.
-4.  **Scan**: `scan.py` identifies files and directories to be deleted based on predefined and custom patterns.
-5.  **Confirm**: The user is presented with a `rich` preview (via `ui.py`) and prompted to proceed.
-6.  **Backup (Optional)**: `backup.py` creates an atomic archive of targets.
-7.  **Delete**: `deletion.py` removes the targets.
-8.  **Release Lock**: The lock is released.
+**Data Flow:**
+1.  **CLI**: Parses args and loads config.
+2.  **Safety**: Validates target root (blocks `/`, `~`).
+3.  **Locking**: Acquires `.pypurge.lock`.
+4.  **Scan**: Walks directory tree -> Filters by rules/gitignore -> Groups targets.
+5.  **UI**: Displays preview & asks confirmation.
+6.  **Backup**: (Optional) Archives targets to zip.
+7.  **Deletion**: Removes files/dirs.
+8.  **Cleanup**: Releases lock.
 
 ---
 
-## 🗺️ Roadmap
+## 🐞 Troubleshooting
 
-Our vision for `pypurge` is just getting started. We have ambitious plans for new features, integrations, and AI-powered capabilities.
+| Issue | Possible Cause | Solution |
+| :--- | :--- | :--- |
+| **"Operation not permitted"** | File permissions or locked file. | Try `--force` or check file owner. |
+| **"Lock file is stale"** | Previous run crashed or is running. | Remove `.pypurge.lock` or wait. |
+| **"Refusing to run on dangerous root"** | You are running on `/` or `~`. | Use `--allow-broad-root` (Caution!). |
+| **No files found** | `.gitignore` might be hiding them. | Try `--no-gitignore`. |
 
-To see the full, detailed plan, please check out our official [**Project Roadmap**](ROADMAP.md).
+**Debug Mode**:
+Use `--log-format text` (default) or `--log-format json` with `--log-file pypurge.log` to inspect operations.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) (if available) or simply fork the repository and submit a Pull Request.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to set up your development environment and submit Pull Requests.
+
+To run tests locally:
+```bash
+tox
+```
 
 ---
 
-## 🪪 License
+## 🗺️ Roadmap
+
+We are constantly improving `pypurge`. Check out our [ROADMAP.md](ROADMAP.md) for upcoming features, including:
+*   Enhanced AI-based clutter detection.
+*   Plugin system for custom cleaners.
+*   Deeper IDE integrations.
+
+---
+
+## License
 
 MIT © Dhruv
