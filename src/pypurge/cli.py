@@ -222,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
                     "._*",
                 ],
                 "DB Temps": ["*.db-wal", "*.db-shm"],
-                "General Temps": ["*.tmp", "*.temp", "*.log", "CACHEDIR.TAG"],
+                "General Temps": ["*.tmp", "*.temp", "CACHEDIR.TAG"],
                 "Profiling": ["*.prof"],
                 "Installer Logs": ["pip-log.txt", "pip-delete-this-directory.txt"],
                 "PyInstaller": ["*.manifest", "*.spec"],
@@ -232,6 +232,9 @@ def main(argv: list[str] | None = None) -> int:
                     file_groups[g] += pats
                 else:
                     file_groups[g] = pats
+
+            if args.include:
+                file_groups.setdefault("User Included", []).extend(args.include)
 
             exclude_dirs = {".git", ".svn", ".hg", ".idea", ".vscode"} | set(
                 config.get("exclude_dirs", [])

@@ -42,6 +42,12 @@ def get_parser() -> argparse.ArgumentParser:
         help="Also clean virtualenv folders (.venv, venv...).",
     )
     parser.add_argument(
+        "--include",
+        action="append",
+        default=[],
+        help="Glob pattern to include for deletion. Can be used multiple times.",
+    )
+    parser.add_argument(
         "--exclude",
         action="append",
         default=[],
